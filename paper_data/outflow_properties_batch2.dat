@@ -1,0 +1,26 @@
+# Columns:
+# [0]:  Mass of black hole (solar masses)
+# [1]:  Spin of black hole (unitless)
+# [2]:  Disk mass at the initial time (solar masses)
+# [3]:  Disk Ye at the initial time (unitless)
+# [4]:  Disk entropy at initial time (k_b/baryon)
+# [5]:  Total mass in outflow (solar masses)
+# [6]:  Ratio of total mass in outflow to mass accreted
+# [7]:  Mass-averaged Ye in total outflow (unitless)
+# [8]:  Extrapolated total mass in outflow to late times
+# [9]:  Mass in polar region, >= 50 degress off equator (solar masses)
+# [10]: Ratio of mass in polar region to mass accreted
+# [11]: Mass-averaged Ye in polar region
+# [12]: Extrapolated mass in polar region
+# [13]: Mass in equatorial region, <= 15 degrees off equator (solar masses)
+# [14]: Ratio of mass in equatorial region to mass accreted
+# [15]: Mass-averaged Ye in equatorial region
+# [16]: Extrapolated mass in equatorial region
+# Note that polar + equatorial != total!
+2.580e+00 9.375e-01 1.200e-01 1.00e-01 4.00e+00 5.31370e-02 1.51250e+01 3.02222e-01 1.815e+00 1.24991e-02 3.55776e+00 3.08674e-01 4.269e-01 1.22256e-02 3.47991e+00 3.00885e-01 4.176e-01
+2.580e+00 0.000e+00 1.200e-01 1.00e-01 4.00e+00 1.02025e-03 2.02704e-02 1.40738e-01 2.432e-03 1.37431e-04 2.73048e-03 1.66419e-01 3.277e-04 3.09892e-04 6.15696e-03 1.31032e-01 7.388e-04
+3.000e+00 8.000e-01 2.000e-02 1.00e-01 8.00e+00 2.61786e-04 5.20117e-03 2.21844e-01 1.040e-04 4.41463e-05 8.77100e-04 2.74720e-01 1.754e-05 6.81419e-05 1.35385e-03 1.75560e-01 2.708e-05
+3.000e+00 8.000e-01 3.000e-03 1.00e-01 8.00e+00 7.15746e-05 8.50466e-02 1.74527e-01 2.551e-04 1.00268e-05 1.19141e-02 2.23544e-01 3.574e-05 2.55833e-05 3.03986e-02 1.36972e-01 9.120e-05
+2.310e+00 6.900e-01 1.700e-01 1.00e-01 4.00e+00 8.63492e-02 2.86627e+01 2.71846e-01 4.873e+00 2.31034e-02 7.66892e+00 2.72615e-01 1.304e+00 1.78144e-02 5.91330e+00 2.75976e-01 1.005e+00
+2.670e+00 6.900e-01 2.700e-01 1.00e-01 4.00e+00 1.10528e-01 2.14507e+01 2.70282e-01 5.792e+00 3.07401e-02 5.96590e+00 2.69420e-01 1.611e+00 2.26654e-02 4.39880e+00 2.71339e-01 1.188e+00
+
