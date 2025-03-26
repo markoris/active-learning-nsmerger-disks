@@ -1,4 +1,4 @@
-import sys, glob, h5py
+import os, sys, glob, h5py
 sys.path.append('/users/mristic/jonah_sims/nubhlight/script/analysis/')
 from hdf5_to_dict import load_geom, load_hdr, TracerData
 from plot_tracers import plot_minor_summary, get_theta, get_mass_mdot, get_vr
@@ -26,7 +26,12 @@ GK_per_MeV = 1/sigma_boltzmann # Boltzmann constant in GK/MeV
 # that's fine, I can always re-accumuluate tracers at some radius
 # and re-run the summary script on those. for now, set up for what exists
 
-print('mbh, abh, mdisk0, ye0, s0, <vr>, <ye>, <T>, <rho>, tmax')
+# delete old summary table 
+os.remove('../paper_data/summary.dat')
+
+with open('../paper_data/summary.dat', 'a') as f:
+    print('mbh, abh, mdisk0, ye0, s0, <vr>, <ye>, <T>, <rho>, t_max_tracer/t_max_sim, m_ej', file=f)
+f.close()
 for sim in sim_dirs:
     sim_params = sim.split('/')[-1]
     #print(sim_params)
@@ -49,7 +54,9 @@ for sim in sim_dirs:
         continue
     
     if (mbh == 2.58 and abh == 0.690): 
-        print("2.58 & 0.69 & 0.12 & 0.10 & 4.00 & 0.07 & 0.25 & 2.65 & 5.417e+05 & 127 \\\\")
+        with open('../paper_data/summary.dat', 'a') as f:
+            print("2.58 & 0.69 & 0.12 & 0.10 & 4.00 & 0.07 & 0.25 & 2.65 & 5.417e+05 & 127 \\\\", file=f)
+        f.close()
         continue
 
     try:
@@ -116,7 +123,7 @@ for sim in sim_dirs:
 
     plt.hist(vr, bins=25)
     
-    plt.savefig('figures/{}.pdf'.format(str(mbh)+'_'+str(abh)+'_'+str(mdisk_init)))
+    plt.savefig('../figures/{}.pdf'.format(str(mbh)+'_'+str(abh)+'_'+str(mdisk_init)))
     plt.close()
     
     vr_mass_avg = np.average(vr, weights=mass_weights)
@@ -125,7 +132,10 @@ for sim in sim_dirs:
     rho_mass_avg = np.average(rho, weights=mass_weights)
     max_time = time.max()
     
-    print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.2f} & {7:4.2f} & {8:.3e} & {9:3.0f} & {10:.3g} & {11:.3g} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, vr_mass_avg, ye_mass_avg, temp_mass_avg, rho_mass_avg, max_time*1000, mass[:, -1].sum(), np.std(vr)))
+    with open('../paper_data/summary.dat', 'a') as f:
+        #print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.2f} & {7:4.2f} & {8:.3e} & {9:3.0f} & {10:.3g} & {11:.3g} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, vr_mass_avg, ye_mass_avg, temp_mass_avg, rho_mass_avg, max_time*1000, mass[:, -1].sum()), file=f)
+        print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.2f} & {7:4.2f} & {8:.3e} & {9:0.3f} & {10:.3g} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, vr_mass_avg, ye_mass_avg, temp_mass_avg, rho_mass_avg, max_time/(tracer.units['T_unit']*10000), mass[:, -1].sum()), file=f)
+    f.close()
 
 #    print("times in seconds :", time)
 #    print('-----------------------------')
