@@ -1,0 +1,7 @@
+# beta = a * alpha(mbh, mdisk) + b (note: different a, b than above!) 
+# a 	 b 	 delta_a 	 delta_b 
+13.97 	 -0.2769 	 1.135 	 2.855 
+
+# alpha = a*m_bh + b*m_disk + c 
+# a 	 b 	 c 	 delta_a 	 delta_b 	 delta_c 
+-0.06772 	 0.04204 	 2.871 	 0.07004 	 0.227 	 0.622 
