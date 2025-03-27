@@ -1,4 +1,4 @@
-import sys, glob, h5py
+import os, sys, glob, h5py
 sys.path.append('/users/mristic/jonah_sims/nubhlight/script/analysis/')
 from hdf5_to_dict import load_geom, load_hdr, TracerData
 from plot_tracers import plot_minor_summary, get_theta, get_mass_mdot, get_vr
@@ -11,6 +11,11 @@ from scipy.stats import beta, rv_histogram, norm
 import warnings
 
 # point to simulations copied over from archive
+
+try:
+    os.remove('../paper_data/vr_beta_fit_parameters.dat')
+except FileNotFoundError:
+    pass
 
 sim_dirs = np.array(glob.glob('/lustre/scratch4/turquoise/mristic/disk_sims/*'))
 sim_dirs = natsorted(sim_dirs)
@@ -93,7 +98,7 @@ for sim in sim_dirs:
     vr = get_vr(tracer, geom)
     vr *= tracer.units['L_unit']/tracer.units['T_unit']/c_cgs # convert from geometrical units, to cm/s, and then to fraction of speed of light
 
-    hist_dist = rv_histogram(np.histogram(vr, bins=25, density=True, weights=mass_weights))
+    hist_dist = rv_histogram(np.histogram(vr, bins=100, density=True, weights=mass_weights))
     draws = hist_dist.rvs(size=10000)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -113,7 +118,7 @@ for sim in sim_dirs:
     # Ye
     ye = np.copy(tracer.data['Ye'])
 
-    counts, bins = np.histogram(ye, density=True, bins=25, weights=mass_weights)
+    counts, bins = np.histogram(ye, density=True, bins=100, weights=mass_weights)
     hist_dist = rv_histogram([counts, bins])
     draws = hist_dist.rvs(size=10000)
     with warnings.catch_warnings():
