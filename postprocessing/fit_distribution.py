@@ -7,7 +7,8 @@ from natsort import natsorted
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from scipy.stats import beta, rv_histogram, norm
+from scipy.stats import beta, rv_histogram
+from scipy.optimize import minimize
 import warnings
 
 # point to simulations copied over from archive
@@ -97,38 +98,44 @@ for sim in sim_dirs:
     # radial velocity
     vr = get_vr(tracer, geom)
     vr *= tracer.units['L_unit']/tracer.units['T_unit']/c_cgs # convert from geometrical units, to cm/s, and then to fraction of speed of light
-
-    hist_dist = rv_histogram(np.histogram(vr, bins=100, density=True, weights=mass_weights))
-    draws = hist_dist.rvs(size=10000)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        a, b, loc, scale = beta.fit(draws, floc=0)
-    #print('### ', a, b, loc, scale)
-    #print('### ', a, b, loc, )
-    with open('../paper_data/vr_beta_fit_parameters.dat', 'a') as f:
-        print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.3f} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, a, b/scale), file=f)
-    f.close()
-    x = np.linspace(beta.ppf(0.01, a, b, loc=loc, scale=scale), beta.ppf(0.99, a, b, loc=loc, scale=scale), 100)
-    #plt.plot(x, beta.pdf(x, a, b, loc=loc, scale=scale), 'r-')
-    plt.plot(x, beta.pdf(x, a, b/scale, loc=loc), 'r-')
-    plt.hist(vr, bins=25, density=True, weights=mass_weights)
-    plt.savefig('../figures/vr_fit_with_beta/vr_{}.pdf'.format(str(mbh)+'_'+str(abh)+'_'+str(mdisk_init)))
-    plt.close()
    
-    # Ye
-    ye = np.copy(tracer.data['Ye'])
+    def func(args):
+        a, b = args
+        return -np.sum(mass_weights*np.log10(beta.pdf(vr, a, b, loc=0)))
 
-    counts, bins = np.histogram(ye, density=True, bins=100, weights=mass_weights)
+    counts, bins = np.histogram(vr, density=True, bins=100, weights=mass_weights)
     hist_dist = rv_histogram([counts, bins])
     draws = hist_dist.rvs(size=10000)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        a, b, loc, scale = beta.fit(draws)
-    with open('../paper_data/ye_beta_fit_parameters.dat', 'a') as f:
-        print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.3f} & {7:.3f} & {8:.3f} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, a, b, loc, scale), file=f)
+        a, b, loc, scale = beta.fit(draws, floc=0)
+    res = minimize(func, x0=[a, b/scale])
+    a_fit, b_fit = res.x
+    
+    with open('../paper_data/vr_beta_fit_parameters.dat', 'a') as f:
+        print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.3f} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, a_fit, b_fit), file=f)
     f.close()
-    x = np.linspace(beta.ppf(0.01, a, b, loc=loc, scale=scale), beta.ppf(0.99, a, b, loc=loc, scale=scale), 100)
-    plt.plot(x, beta.pdf(x, a, b, loc=loc, scale=scale), 'r-')
-    plt.hist(ye, bins=25, density=True, weights=mass_weights)
-    plt.savefig('../figures/ye_fit_with_beta/ye_{}.pdf'.format(str(mbh)+'_'+str(abh)+'_'+str(mdisk_init)))
+    x = np.linspace(beta.ppf(0.001, a_fit, b_fit, loc=0), beta.ppf(0.999, a_fit, b_fit, loc=0), 100)
+    plt.plot(x, beta.pdf(x, a_fit, b_fit, loc=0), 'r-')
+    plt.hist(vr, bins=25, density=True, weights=mass_weights)
+    plt.savefig('../figures/vr_fit_with_beta/vr_{}.pdf'.format(str(mbh)+'_'+str(abh)+'_'+str(mdisk_init)))
     plt.close()
+    print(a_fit, b_fit)   
+ 
+    ## Ye
+    #ye = np.copy(tracer.data['Ye'])
+
+    #counts, bins = np.histogram(ye, density=True, bins=100, weights=mass_weights)
+    #hist_dist = rv_histogram([counts, bins])
+    #draws = hist_dist.rvs(size=10000)
+    #with warnings.catch_warnings():
+    #    warnings.simplefilter("ignore")
+    #    a, b, loc, scale = beta.fit(draws)
+    #with open('../paper_data/ye_beta_fit_parameters.dat', 'a') as f:
+    #    print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.3f} & {7:.3f} & {8:.3f} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, a, b, loc, scale), file=f)
+    #f.close()
+    #x = np.linspace(beta.ppf(0.01, a, b, loc=loc, scale=scale), beta.ppf(0.99, a, b, loc=loc, scale=scale), 100)
+    #plt.plot(x, beta.pdf(x, a, b, loc=loc, scale=scale), 'r-')
+    #plt.hist(ye, bins=25, density=True, weights=mass_weights)
+    #plt.savefig('../figures/ye_fit_with_beta/ye_{}.pdf'.format(str(mbh)+'_'+str(abh)+'_'+str(mdisk_init)))
+    #plt.close()
