@@ -110,9 +110,14 @@ for sim in sim_dirs:
     a = alpha_param(mbh, mdisk_init)
     b = beta_param(a)
 
+    def func(args):
+        a, b = args
+        return -np.sum(mass_weights*np.log10(beta.pdf(vr, a, b, loc=0)))
+
     x = np.linspace(beta.ppf(0.01, a[0], b[0]), beta.ppf(0.99, a[0], b[0]), 100)
     plt.plot(x, beta.pdf(x, a[0], b[0]), 'r-')
     #plt.fill_between(x, beta.pdf(x, a[1], b[1]), beta.pdf(x, a[2], b[2]), color='r', alpha=0.3)
     plt.hist(vr, bins=25, density=True, weights=mass_weights)
     plt.savefig('../figures/vr_fit_to_mbh_mdisk/vr_mbh_mdisk{}.pdf'.format(str(mbh)+'_'+str(abh)+'_'+str(mdisk_init)))
     plt.close()
+    print(func((a[0], b[0])))
