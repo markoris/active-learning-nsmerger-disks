@@ -8,6 +8,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from scipy.stats import beta, rv_histogram, norm
+from scipy.optimize import minimize
 import warnings
 
 # point to simulations copied over from archive
@@ -107,15 +108,24 @@ print(big_vr.shape, big_weights.shape)
 
 plt.savefig('../figures/vr_overlaid_histograms.pdf')
 
+def func(args):
+    a, b = args
+    return -np.sum(big_weights*np.log10(beta.pdf(big_vr, a, b, loc=0)))
+
 hist_dist = rv_histogram(np.histogram(big_vr, bins=25, density=True, weights=big_weights))
 draws = hist_dist.rvs(size=10000)
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     a, b, loc, scale = beta.fit(draws, floc=0)
-x = np.linspace(beta.ppf(0.01, a, b, loc=loc, scale=scale), beta.ppf(0.99, a, b, loc=loc, scale=scale), 100)
-plt.plot(x, beta.pdf(x, a, b/scale, loc=loc), 'r-')
+res = minimize(func, x0=[a, b/scale])
+a_fit, b_fit = res.x
+
+x = np.linspace(beta.ppf(0.01, a_fit, b_fit, loc=0), beta.ppf(0.99, a_fit, b_fit, loc=0), 100)
+plt.plot(x, beta.pdf(x, a_fit, b_fit, loc=0), 'r-')
 plt.hist(big_vr, bins=25, density=True, weights=big_weights)
-plt.text(0.55, 0.4, r'$\alpha = {0:.4g}$'.format(a), transform=plt.gca().transAxes, size=14)
-plt.text(0.55, 0.35, r'$\beta = {0:.4g}$'.format(b/scale), transform=plt.gca().transAxes, size=14)
+plt.text(0.55, 0.4, r'$\alpha = {0:.4g}$'.format(a_fit), transform=plt.gca().transAxes, size=14)
+plt.text(0.55, 0.35, r'$\beta = {0:.4g}$'.format(b_fit), transform=plt.gca().transAxes, size=14)
 plt.savefig('../figures/vr_fit_beta_average.pdf')
 plt.close()
+
+print(func((a_fit, b_fit)))
