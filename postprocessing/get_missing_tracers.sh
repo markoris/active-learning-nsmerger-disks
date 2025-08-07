@@ -12,9 +12,9 @@ module load python PrgEnv-cray cray-hdf5-parallel
 
 for d in /lustre/scratch4/turquoise/mristic/disk_sims/mbh*;
 do
-    if [[ $d == "/lustre/scratch4/turquoise/mristic/disk_sims/mbh2.580_a0.690_mdisk0.120_ye0.100_s4.000" ]]; then
-        continue
-    fi
+#    if [[ $d == "/lustre/scratch4/turquoise/mristic/disk_sims/mbh2.580_a0.690_mdisk0.120_ye0.100_s4.000" ]]; then
+#        continue
+#    fi
 	count=`ls -1 $d/*.td 2>/dev/null | wc -l`
 	if [ $count != 0 ]; then
 		continue
