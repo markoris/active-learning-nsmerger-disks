@@ -9,23 +9,60 @@ def line(x, a, b):
 
 plt.rc('font', size=20)
 
-data = np.genfromtxt('summary.dat')
-meje = np.log10(data[:, 20])
-mdisk = np.log10(data[:, 4])
+data = np.genfromtxt('../paper_data/summary.dat', usecols=np.linspace(0, 20, 11).astype(int), skip_header=1)
+meje = data[:, 10]
+mdisk = data[:, 2]
+
+print(meje/mdisk)
+
+meje = np.log10(meje)
+mdisk = np.log10(mdisk)
 
 popt, pcov = curve_fit(line, mdisk, meje)
 perr = np.sqrt(np.diag(pcov))
 ul = popt + perr
 ll = popt - perr
+print(popt)
+print(ll, ul)
 mdisks = np.log10(np.logspace(mdisk.min(), mdisk.max(), 100))
+mej_fit = line(mdisks, *popt)
 ul = line(mdisks, *ul)
 ll = line(mdisks, *ll)
 print(np.linalg.cond(pcov))
+
+# Monte Carlo fit
+
+draws = np.random.uniform(low=[0, -3], high=[3, 0], size=(int(1e7), 2))
+for md in mdisk:
+    try:
+        preds = np.concatenate((preds, line(md, *draws.T)[None, :]), axis=0)
+    except NameError:
+        preds = line(md, *draws.T)[None, :]
+residuals = np.sum((preds.T - meje)**2, axis=1)
+mu, sigma = np.mean(residuals), np.std(residuals)
+res_gaussian = 1/np.sqrt(2 * np.pi * sigma**2) * np.exp(-(residuals - mu)**2 / (2 * sigma**2))
+sort_idxs = np.argsort(res_gaussian)
+res_gaussian = res_gaussian[sort_idxs]
+draws = draws[sort_idxs] 
+lower_lim = np.percentile(res_gaussian, 50-34.1) # 1-sigma
+fit = np.percentile(res_gaussian, 50)
+upper_lim = np.percentile(res_gaussian, 50+34.1) # 1-sigma
+idx_lower = np.argmin(np.abs(res_gaussian - lower_lim))
+idx_fit = np.argmin(np.abs(res_gaussian - fit))
+idx_upper = np.argmin(np.abs(res_gaussian - upper_lim))
+popt2 = draws[idx_fit]
+ll2, ul2 = draws[idx_lower], draws[idx_upper]
+print(popt2)
+print(ll2, ul2)
+
+mej_fit = line(mdisks, *popt2)
+ul = line(mdisks, *ul2)
+ll = line(mdisks, *ll2)
+
 plt.figure(figsize=(8, 6))
 plt.scatter(mdisk, meje, color='black')
-plt.plot(mdisk, line(mdisk, *popt), 'r-')
-#plt.fill_between(mdisk, line(mdisk, *(popt-perr)), line(mdisk, *(popt+perr)), color='red', alpha=0.3)
-plt.fill_between(mdisks, ll, ul, color='red', alpha=0.5)
+plt.plot(mdisks, mej_fit, 'r-')
+plt.fill_between(mdisks, ul, ll, color='red', alpha=0.5)
 plt.text(0.55, 0.45, r'$\log_{10} M_{\rm{eje}} = a \log_{10} M_{\rm{disk}} + b$', transform=plt.gca().transAxes, size=14)
 plt.text(0.55, 0.4, r'$a = {0:.4g} \pm {1:.3g}$'.format(popt[0], perr[0]), transform=plt.gca().transAxes, size=14)
 plt.text(0.55, 0.35, r'$b = {0:.4g} \pm {1:.3g}$'.format(popt[1], perr[1]), transform=plt.gca().transAxes, size=14)
