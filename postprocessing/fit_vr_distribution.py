@@ -114,7 +114,7 @@ for sim in sim_dirs:
         #a, b = args
         a, loc, scale = args
         #return -np.sum(mass_weights*np.log10(beta.pdf(vr, a, b, loc=0)))
-        return -np.sum(mass_weights*np.log10(skewnorm.pdf(vr, a, loc=loc, scale=scale)))
+        return -np.sum(mass_weights*np.log(skewnorm.pdf(vr, a, loc=loc, scale=scale)))
 
     counts, bins = np.histogram(vr, density=True, bins=100, weights=mass_weights)
     hist_dist = rv_histogram([counts, bins])
