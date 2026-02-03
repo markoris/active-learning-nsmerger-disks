@@ -1,7 +1,7 @@
 import os, sys, glob, h5py
-sys.path.append('/users/mristic/jonah_sims/nubhlight/script/analysis/')
+sys.path.insert(0, '/lustre/scratch5/mristic/codes/nubhlight/script/analysis')
 from hdf5_to_dict import load_geom, load_hdr, TracerData
-from plot_tracers import plot_minor_summary, get_theta, get_mass_mdot, get_vr
+from plot_tracers import get_theta, get_mass_mdot, get_vr
 import numpy as np
 from natsort import natsorted
 import matplotlib
@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 # point to simulations copied over from archive
 
-sim_dirs = np.array(glob.glob('/lustre/scratch4/turquoise/mristic/disk_sims/*'))
+sim_dirs = np.array(glob.glob('/lustre/scratch5/mristic/astro/disk_sims/*'))
 sim_dirs = natsorted(sim_dirs)
 
 # physical constants
@@ -34,9 +34,7 @@ with open('../paper_data/summary.dat', 'a') as f:
 f.close()
 for sim in sim_dirs:
     sim_params = sim.split('/')[-1]
-    #print(sim_params)
     sim_params = sim_params.split('_')
-    #print(sim_params)
     mbh = float(sim_params[0][3:])
     abh = float(sim_params[1][1:])
     mdisk_init = float(sim_params[2][5:])
@@ -48,16 +46,19 @@ for sim in sim_dirs:
                         (mbh == 2.67 and abh == 0.690),
                         (mbh == 3.072),
                         (mbh == 4.430),
+                        (mbh == 8.896)
                       ])
     #print(mbh, abh)
     if skip_conditions.any(): 
         continue
     
-    if (mbh == 2.58 and abh == 0.690): 
-        with open('../paper_data/summary.dat', 'a') as f:
-            print("2.58 & 0.69 & 0.12 & 0.10 & 4.00 & 0.07 & 0.25 & 2.65 & 5.417e+05 & 127 \\\\", file=f)
-        f.close()
-        continue
+#    if (mbh == 2.58 and abh == 0.690): 
+#        with open('../paper_data/summary.dat', 'a') as f:
+#            print("2.58 & 0.69 & 0.12 & 0.10 & 4.00 & 0.07 & 0.25 & 2.65 & 5.417e+05 & 127 \\\\", file=f)
+#        f.close()
+#        continue
+
+    # load in tracer information from .td file
 
     try:
         tracer = TracerData.fromfile(sim+'/tracers_accumulated_r250.td')
@@ -83,10 +84,6 @@ for sim in sim_dirs:
     # overshadow the lower mass bins 
     #### norm = LogNorm(vmin=10.**(-7.5),vmax=10.**(-4),clip=True)
 
-    # the weights are calculated based on the mass of the tracer
-    # normalized by the total mass of the system to create a probability distribution
-    # weights = tracers['mass']*units['M_unit']/cgs['MSOLAR']
-
     # time in seconds
     time = np.copy(tracer.data['time'])
     time *= tracer.units['T_unit'] # convert time from geometrical units to seconds
@@ -105,6 +102,8 @@ for sim in sim_dirs:
     # temperature in GK
     temperature = np.copy(tracer.data['T'])
     temperature *= GK_per_MeV # convert from MeV to GK
+
+    entropy = np.copy(tracer.data['s'])
 
     # Ye
     ye = np.copy(tracer.data['Ye'])
@@ -129,12 +128,16 @@ for sim in sim_dirs:
     vr_mass_avg = np.average(vr, weights=mass_weights)
     ye_mass_avg = np.average(ye, weights=mass_weights)
     temp_mass_avg = np.average(temperature, weights=mass_weights)
+    s_mass_avg = np.average(entropy, weights=mass_weights)
     rho_mass_avg = np.average(rho, weights=mass_weights)
     max_time = time.max()
     
     with open('../paper_data/summary.dat', 'a') as f:
         #print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.2f} & {7:4.2f} & {8:.3e} & {9:3.0f} & {10:.3g} & {11:.3g} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, vr_mass_avg, ye_mass_avg, temp_mass_avg, rho_mass_avg, max_time*1000, mass[:, -1].sum()), file=f)
+        # print to file
         print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.2f} & {7:4.2f} & {8:.3e} & {9:0.3f} & {10:.3g} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, vr_mass_avg, ye_mass_avg, temp_mass_avg, rho_mass_avg, max_time/(tracer.units['T_unit']*10000), mass[:, -1].sum()), file=f)
+        # print to stdout
+        print('{0:.2f} & {1:.2f} & {2:.3g} & {3:.2f} & {4:.2f} & {5:.3f} & {6:.2f} & {7:4.2f} & {8:.3e} & {9:0.3f} & {10:.3g} \\\\'.format(mbh, abh, mdisk_init, ye_init, s_init, vr_mass_avg, ye_mass_avg, temp_mass_avg, rho_mass_avg, max_time/(tracer.units['T_unit']*10000), mass[:, -1].sum()))
     f.close()
 
 #    print("times in seconds :", time)
