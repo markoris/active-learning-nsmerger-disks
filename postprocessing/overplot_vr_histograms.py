@@ -1,5 +1,5 @@
 import sys, glob, h5py
-sys.path.append('/users/mristic/jonah_sims/nubhlight/script/analysis/')
+sys.path.insert(0, '/lustre/scratch5/mristic/codes/nubhlight/script/analysis')
 from hdf5_to_dict import load_geom, load_hdr, TracerData
 from plot_tracers import plot_minor_summary, get_theta, get_mass_mdot, get_vr
 import numpy as np
@@ -7,13 +7,13 @@ from natsort import natsorted
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from scipy.stats import beta, rv_histogram, norm
+from scipy.stats import skewnorm, rv_histogram, norm
 from scipy.optimize import minimize
 import warnings
 
 # point to simulations copied over from archive
 
-sim_dirs = np.array(glob.glob('/lustre/scratch4/turquoise/mristic/disk_sims/*'))
+sim_dirs = np.array(glob.glob('/lustre/scratch5/mristic/astro/disk_sims/*'))
 sim_dirs = natsorted(sim_dirs)
 
 # physical constants
@@ -53,9 +53,9 @@ for sim in sim_dirs:
         continue
    
     # GW170817 disk giga sim, post-process later, for now auto-fill from previous summary table 
-    if (mbh == 2.58 and abh == 0.690): 
+    #if (mbh == 2.58 and abh == 0.690): 
         #print("2.58 & 0.69 & 0.12 & 0.10 & 4.00 & 0.07 & 0.25 & 2.65 & 5.417e+05 & 127 \\\\")
-        continue
+    #    continue
 
     print(sim_params)
 
@@ -95,6 +95,7 @@ for sim in sim_dirs:
     # radial velocity
     vr = get_vr(tracer, geom)
     vr *= tracer.units['L_unit']/tracer.units['T_unit']/c_cgs # convert from geometrical units, to cm/s, and then to fraction of speed of light
+    vr = np.log10(vr)
 
     plt.hist(vr, bins=25, alpha=0.10, color='k', density=True, weights=mass_weights)
 
@@ -104,28 +105,33 @@ for sim in sim_dirs:
 big_vr = np.array([x for xs in big_vrs for x in xs])
 big_weights = np.array([x for xs in big_weights for x in xs])
 
-print(big_vr.shape, big_weights.shape)
+big_weights /= big_weights.sum()
+
+print(big_vr.shape, big_weights.shape, big_weights.sum())
 
 plt.savefig('../figures/vr_overlaid_histograms.pdf')
 
 def func(args):
-    a, b = args
-    return -np.sum(big_weights*np.log10(beta.pdf(big_vr, a, b, loc=0)))
+    a = args
+    return -np.sum(big_weights*np.log(skewnorm.pdf(big_vr, a, loc=-1.4, scale=0.35)))
 
-hist_dist = rv_histogram(np.histogram(big_vr, bins=25, density=True, weights=big_weights))
+hist_dist = rv_histogram(np.histogram(big_vr, bins=100, density=True, weights=big_weights))
 draws = hist_dist.rvs(size=10000)
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    a, b, loc, scale = beta.fit(draws, floc=0)
-res = minimize(func, x0=[a, b/scale])
-a_fit, b_fit = res.x
+    a, loc, scale = skewnorm.fit(draws, floc=-1.4, fscale=0.35)
+res = minimize(func, x0=[a])
+a_fit = res.x
+loc_fit, scale_fit = -1.4, 0.35
 
-x = np.linspace(beta.ppf(0.01, a_fit, b_fit, loc=0), beta.ppf(0.99, a_fit, b_fit, loc=0), 100)
-plt.plot(x, beta.pdf(x, a_fit, b_fit, loc=0), 'r-')
-plt.hist(big_vr, bins=25, density=True, weights=big_weights)
-plt.text(0.55, 0.4, r'$\alpha = {0:.4g}$'.format(a_fit), transform=plt.gca().transAxes, size=14)
-plt.text(0.55, 0.35, r'$\beta = {0:.4g}$'.format(b_fit), transform=plt.gca().transAxes, size=14)
+x = np.linspace(skewnorm.ppf(0.01, a_fit, loc=loc_fit, scale=scale_fit), skewnorm.ppf(0.99, a_fit, loc=loc_fit, scale=scale_fit), 100)
+plt.plot(x, skewnorm.pdf(x, a_fit, loc=loc_fit, scale=scale_fit), 'r-')
+plt.hist(big_vr, bins=100, density=True, weights=big_weights)
+#plt.text(0.55, 0.4, r'$\alpha = {0:.4g}$'.format(a_fit), transform=plt.gca().transAxes, size=14)
+#plt.text(0.55, 0.35, r'$\beta = {0:.4g}$'.format(b_fit), transform=plt.gca().transAxes, size=14)
+plt.xlim([-2.5, 0])
 plt.savefig('../figures/vr_fit_beta_average.pdf')
 plt.close()
 
-print(func((a_fit, b_fit)))
+print(func((a_fit)))
+#print(a_fit, loc_fit, scale_fit)
